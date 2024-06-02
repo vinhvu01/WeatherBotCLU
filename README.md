@@ -13,13 +13,11 @@ Demo
 
 Note: You need to fill in the CluApiKey, CluAPIHostName, and WeatherAPIKey in the file appsettings.json
   {
-      "MicrosoftAppType": "",
-      "MicrosoftAppId": "",
-      "MicrosoftAppPassword": "",
-      "MicrosoftAppTenantId": "",
-      "CluProjectName": "FlightBooking",
-      "CluDeploymentName": "Testing",
+  
       "CluAPIKey": "",
+      
       "CluAPIHostName": "",
+      
       "WeatherAPIKey": ""
+      
   }
