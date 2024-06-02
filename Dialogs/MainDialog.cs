@@ -9,6 +9,7 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using Microsoft.Recognizers.Text.DataTypes.TimexExpression;
+using WeatherBotCLU.Dialogs;
 
 namespace Microsoft.BotBuilderSamples.Dialogs
 {
@@ -18,7 +19,7 @@ namespace Microsoft.BotBuilderSamples.Dialogs
         protected readonly ILogger Logger;
 
         // Dependency injection uses this constructor to instantiate MainDialog
-        public MainDialog(FlightBookingRecognizer cluRecognizer, BookingDialog bookingDialog, ILogger<MainDialog> logger)
+        public MainDialog(FlightBookingRecognizer cluRecognizer, BookingDialog bookingDialog, WeatherDialog weatherDialog, ILogger<MainDialog> logger)
             : base(nameof(MainDialog))
         {
             _cluRecognizer = cluRecognizer;
@@ -26,12 +27,13 @@ namespace Microsoft.BotBuilderSamples.Dialogs
 
             AddDialog(new TextPrompt(nameof(TextPrompt)));
             AddDialog(bookingDialog);
-            AddDialog(new WaterfallDialog(nameof(WaterfallDialog), new WaterfallStep[]
-            {
+            AddDialog(weatherDialog);
+            AddDialog(new WaterfallDialog(nameof(WaterfallDialog),
+            [
                 IntroStepAsync,
                 ActStepAsync,
                 FinalStepAsync,
-            }));
+            ]));
 
             // The initial child Dialog to run.
             InitialDialogId = nameof(WaterfallDialog);
@@ -49,7 +51,7 @@ namespace Microsoft.BotBuilderSamples.Dialogs
 
             // Use the text provided in FinalStepAsync or the default if it is the first time.
             var weekLaterDate = DateTime.Now.AddDays(7).ToString("MMMM d, yyyy");
-            var messageText = stepContext.Options?.ToString() ?? $"What can I help you with today?\nSay something like \"Book a flight from Paris to Berlin on {weekLaterDate}\"";
+            var messageText = stepContext.Options?.ToString() ?? $"What can I help you with today?\nSay something like \"Book a flight on {weekLaterDate}\"";
             var promptMessage = MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput);
             return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
         }
@@ -64,6 +66,7 @@ namespace Microsoft.BotBuilderSamples.Dialogs
 
             // Call CLU and gather any potential booking details. (Note the TurnContext has the response to the prompt.)
             var cluResult = await _cluRecognizer.RecognizeAsync<FlightBooking>(stepContext.Context, cancellationToken);
+
             switch (cluResult.GetTopIntent().intent)
             {
                 case FlightBooking.Intent.BookFlight:
@@ -74,16 +77,17 @@ namespace Microsoft.BotBuilderSamples.Dialogs
                         Origin = cluResult.Entities.GetFromCity(),
                         TravelDate = cluResult.Entities.GetFlightDate(),
                     };
-
                     // Run the BookingDialog giving it whatever details we have from the CLU call, it will fill out the remainder.
                     return await stepContext.BeginDialogAsync(nameof(BookingDialog), bookingDetails, cancellationToken);
 
                 case FlightBooking.Intent.GetWeather:
-                    // We haven't implemented the GetWeatherDialog so we just display a TODO message.
-                    var getWeatherMessageText = "TODO: get weather flow here";
-                    var getWeatherMessage = MessageFactory.Text(getWeatherMessageText, getWeatherMessageText, InputHints.IgnoringInput);
-                    await stepContext.Context.SendActivityAsync(getWeatherMessage, cancellationToken);
-                    break;
+                    var bookingDetails1 = new BookingDetails()
+                    {
+                        Destination = cluResult.Entities.GetToCity(),
+                        Origin = cluResult.Entities.GetFromCity(),
+                        TravelDate = cluResult.Entities.GetFlightDate(),
+                    };
+                    return await stepContext.BeginDialogAsync(nameof(WeatherDialog), bookingDetails1, cancellationToken);
 
                 default:
                     // Catch all for unhandled intents

@@ -10,6 +10,7 @@ using Microsoft.BotBuilderSamples.Bots;
 using Microsoft.BotBuilderSamples.Dialogs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WeatherBotCLU.Dialogs;
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -40,6 +41,9 @@ namespace Microsoft.BotBuilderSamples
 
             // Register the BookingDialog.
             services.AddSingleton<BookingDialog>();
+
+            // Register the WeatherDialog.
+            services.AddSingleton<WeatherDialog>();
 
             // The MainDialog that will be run by the bot.
             services.AddSingleton<MainDialog>();
