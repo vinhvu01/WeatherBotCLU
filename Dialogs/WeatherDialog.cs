@@ -94,7 +94,7 @@ namespace WeatherBotCLU.Dialogs
                 var description = results.Days[0].Description;
                 var temperature = results.Days[0].Temp;
 
-                return $"{description} with a temperature of {temperature}°C";
+                return $"{description}. The temperature of {temperature}°F";
             }
 
             return "Sorry, I didn't get that. Please try asking in a different way";
