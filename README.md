@@ -1,5 +1,6 @@
 # WeatherBotCLU
-A Weather Bot demo Integrate conversational language and Weather API (www.visualcrossing.com)
+A Weather Bot demo using Integrate conversational language and Weather API (www.visualcrossing.com)
+
 Integrate conversational language: https://learn.microsoft.com/en-us/azure/ai-services/language-service/conversational-language-understanding/overview
 
 Weather API: https://www.visualcrossing.com/resources/documentation/weather-api/weather-api-documentation/
