@@ -17,6 +17,8 @@ namespace WeatherBotCLU.Dialogs
     {
         private const string DestinationStepMsgText = "Where would you like to get the weather?";
 
+        private const string DateTimeStepMsgText = "When would you like to get the weather?";
+
         public const string UrlTimeLine = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline";
 
         public static string WeatherApiKey = "";
@@ -29,6 +31,7 @@ namespace WeatherBotCLU.Dialogs
             var waterfallSteps = new WaterfallStep[]
             {
                 PromptForLocationStepAsync,
+                PromptDateTimeStepAsync,
                 FetchWeatherStepAsync
             };
 
@@ -60,6 +63,24 @@ namespace WeatherBotCLU.Dialogs
             return await stepContext.NextAsync(bookingDetails.Destination, cancellationToken);
         }
 
+        private async Task<DialogTurnResult> PromptDateTimeStepAsync(WaterfallStepContext stepContext,
+            CancellationToken cancellationToken)
+        {
+            var bookingDetails = (BookingDetails)stepContext.Options;
+
+            bookingDetails.Origin = (string)stepContext.Result;
+
+            if (bookingDetails.TravelDate == null)
+            {
+                var promptMessage = MessageFactory.Text(DateTimeStepMsgText, DateTimeStepMsgText,
+                    InputHints.ExpectingInput);
+                return await stepContext.PromptAsync(nameof(TextPrompt),
+                    new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            }
+
+            return await stepContext.NextAsync(bookingDetails.TravelDate, cancellationToken);
+        }
+
         private async Task<DialogTurnResult> FetchWeatherStepAsync(WaterfallStepContext stepContext,
             CancellationToken cancellationToken)
         {
@@ -67,9 +88,10 @@ namespace WeatherBotCLU.Dialogs
             {
                 var bookingDetails = (BookingDetails)stepContext.Options;
 
-                var location = stepContext.Result;
+                var location = bookingDetails.Origin;
+                var dateTime = stepContext.Result.ToString();
 
-                var weather = GetWeather(location.ToString());
+                var weather = GetWeather(location, dateTime);
                 await stepContext.Context.SendActivityAsync(MessageFactory.Text($"The weather in {location} is: {weather}"),
                     cancellationToken);
             }
@@ -77,7 +99,7 @@ namespace WeatherBotCLU.Dialogs
             return await stepContext.EndDialogAsync(null, cancellationToken);
         }
 
-        private string GetWeather(string location)
+        private string GetWeather(string location, string date)
         {
             if (string.IsNullOrEmpty(location))
             {
@@ -85,7 +107,7 @@ namespace WeatherBotCLU.Dialogs
             }
 
             var restService = new RestService();
-            var datetime = DateTime.Now;
+            var datetime = DateTime.Parse(date);
             var url = $"{UrlTimeLine}/{location}/{datetime:yyyy-MM-ddTHH:mm:ss}?key={WeatherApiKey}";
             var results = restService.GetWeatherData(url);
 
